@@ -1,4 +1,4 @@
-m = Map("dawn", "Hearing Map", translate("Hearing Map"))
+m = Map("dawn", translate("Hearing Map"), translate("Hearing Map"))
 m.pageaction = false
 
 s = m:section(NamedSection, "__hearingmap__")
@@ -8,13 +8,15 @@ function s.render(self, sid)
 	tpl.render_string([[
 		<%
 			local utl = require "luci.util"
+			local xml = require "luci.xml"
 			local status = require "luci.tools.ieee80211"
 			local stat = utl.ubus("dawn", "get_hearing_map", { })
 			local name, macs
+
 			for name, macs in pairs(stat) do
 		%>
 			<div class="cbi-section-node">
-				<h3>SSID: <%= name %></h3>
+				<h3>SSID: <%= xml.pcdata(name) %></h3>
 				<table class="table" id="dawn_hearing_map">
 					<tr class="tr table-titles">
 						<th class="th">Client MAC</th>
@@ -32,9 +34,11 @@ function s.render(self, sid)
 					<%
 						local mac, data
 						for mac, data in pairs(macs) do
+
 							local mac2, data2
 							local count_loop = 0
 							for mac2, data2 in pairs(data) do
+								if data2.freq ~= 0 then --prevent empty entry crashes
 					%>
 						<tr class="tr">
 							<td class="td"><%= (count_loop == 0) and mac or "" %></td>
@@ -50,7 +54,8 @@ function s.render(self, sid)
 							<td class="td"><%= "%d" % data2.score %></td>
 						</tr>
 					<%
-								count_loop = count_loop + 1
+									count_loop = count_loop + 1
+								end
 							end
 						end
 					%>
